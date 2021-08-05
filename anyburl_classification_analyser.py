@@ -63,8 +63,8 @@ def process(predictions_with_scores):
 def evaluate(facts_to_scores_dict, truths, output_file):
 #        threshold_list = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001]):
 
-    threshold_list = arange(0,1,0.001).tolist()
-    threshold_list = [ round(elem,4) for elem in threshold_list]
+    threshold_list = [0.0000000001,0.000000001,0.000000001,0.00000001,0.0000001,0.000001,0.00001,0.0001,0.001] + arange(0.01,1,0.01).tolist()
+    threshold_list = [ round(elem,10) for elem in threshold_list]
 
     number_of_positives = 0
     number_of_negatives = 0
@@ -76,6 +76,7 @@ def evaluate(facts_to_scores_dict, truths, output_file):
     # This stores the result. Each threshold is mapped to a 4-tuple containing true and false positives and negatives.
     threshold_to_counter = {} 
     entry_for = {"true_positives":0, "false_positives":1, "true_negatives":2, "false_negatives":3}
+    threshold_to_counter[0] = [0,0,0,0]
     for threshold in threshold_list:
         threshold_to_counter[threshold] = [0,0,0,0]
   
@@ -98,6 +99,14 @@ def evaluate(facts_to_scores_dict, truths, output_file):
         # Positive example 
         if truth == '1':
             number_of_positives +=1
+            # First consider threshold 0
+            # True positive 
+            if facts_to_scores_dict.get((head, relation, tail),0) > 0:
+                threshold_to_counter[0][entry_for["true_positives"]] +=  1      
+            # False negative
+            else:
+                threshold_to_counter[0][entry_for["false_negatives"]] +=  1      
+            # Consider all other thresholds 
             for threshold in threshold_list:
                 # True positive 
                 if facts_to_scores_dict.get((head, relation, tail),0) >= threshold:
@@ -113,6 +122,14 @@ def evaluate(facts_to_scores_dict, truths, output_file):
             except:
                 num_unscored_negative_facts += 1
             number_of_negatives +=1
+            # First consider threshold 0 
+            # False positive 
+            if facts_to_scores_dict.get((head, relation, tail),0) > 0:
+                threshold_to_counter[0][entry_for["false_positives"]] +=  1      
+            # True negative
+            else:
+                threshold_to_counter[0][entry_for["true_negatives"]] +=  1      
+            # Consider all other thresholds 
             for threshold in threshold_list:
                 # False positive 
                 if facts_to_scores_dict.get((head, relation, tail),0) >= threshold :
